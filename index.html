@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirect Mini App</title>
+    <base href="/rdrettg/">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -62,13 +63,12 @@
 
         // Начальная ссылка редиректа
         const defaultLink = 'https://t.me/XIXYO88004bot?start=1000';
-        // Загружаем ссылку из localStorage или используем дефолтную
         let targetLink = localStorage.getItem('redirectLink') || defaultLink;
 
-        // Проверяем, находится ли пользователь на /admin (учитываем baseurl GitHub Pages)
+        // Проверяем путь
         const pathname = window.location.pathname;
-        const basePath = '/rdrettg';  // Твой baseurl
-        const isAdminPage = pathname === '/admin' || pathname === `${basePath}/admin`;
+        console.log('Current pathname:', pathname); // Для отладки
+        const isAdminPage = pathname === '/admin' || pathname === '/rdrettg/admin' || pathname === '/rdrettg/admin/';
 
         // Элементы DOM
         const loadingDiv = document.getElementById('loading');
@@ -80,9 +80,11 @@
 
         // Показываем нужный интерфейс
         if (isAdminPage) {
+            console.log('Admin page detected, showing login form');
             loadingDiv.classList.add('hidden');
             adminLoginDiv.classList.remove('hidden');
         } else {
+            console.log('Main page detected, performing redirect');
             loadingDiv.classList.remove('hidden');
             adminLoginDiv.classList.add('hidden');
             adminPanelDiv.classList.add('hidden');
@@ -114,21 +116,25 @@
         // Проверка пароля
         window.checkPassword = function() {
             const password = document.getElementById('password-input').value;
+            console.log('Password entered:', password); // Для отладки
             if (password === 'maraga') {
                 adminLoginDiv.classList.add('hidden');
                 adminPanelDiv.classList.remove('hidden');
                 currentLinkSpan.textContent = targetLink;
                 newLinkInput.value = targetLink;
                 errorDiv.classList.add('hidden');
+                console.log('Password correct, showing admin panel');
             } else {
                 errorDiv.textContent = 'Неверный пароль';
                 errorDiv.classList.remove('hidden');
+                console.log('Incorrect password');
             }
         };
 
         // Сохранение новой ссылки
         window.saveLink = function() {
             const newLink = newLinkInput.value.trim();
+            console.log('Saving new link:', newLink); // Для отладки
             if (newLink && newLink.startsWith('https://t.me/')) {
                 targetLink = newLink;
                 localStorage.setItem('redirectLink', newLink);
