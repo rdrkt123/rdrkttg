@@ -4,36 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirect Mini App</title>
-    <!-- Подключаем Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f0f0f0; }
-        #loading { color: #007AFF; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+            margin: 0;
+        }
+        #loading {
+            color: #007AFF;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
     <div id="loading">Перенаправление...</div>
 
     <script>
-        // Инициализируем Telegram Web App
+        // Инициализация Telegram Web App
         const tg = window.Telegram.WebApp;
-        tg.ready();  // Скрываем загрузчик Telegram
+        tg.ready(); // Сообщаем Telegram, что приложение готово
+        tg.expand(); // Разворачиваем на полный экран
 
-        // Целевая ссылка в Telegram (замените на свою)
-        const targetLink = 'https://t.me/XIXYO88004bot?start=1000'  // Например, https://t.me/durov
+        // Целевая ссылка для редиректа
+        const targetLink = 'https://t.me/XIXYO88004bot?start=1000';
 
-        // Проверяем доступность метода и открываем ссылку
-        if (tg.openTelegramLink.isAvailable()) {
-            tg.openTelegramLink(targetLink);
-        } else {
-            // Fallback: если не поддерживается, просто открываем в браузере
-            window.open(targetLink, '_blank');
+        // Логи для отладки
+        console.log('Mini App loaded, attempting redirect to:', targetLink);
+
+        try {
+            // Проверяем, доступен ли метод openTelegramLink
+            if (typeof tg.openTelegramLink === 'function') {
+                console.log('openTelegramLink is available, redirecting...');
+                tg.openTelegramLink(targetLink);
+            } else {
+                // Fallback для старых клиентов или если метод недоступен
+                console.log('openTelegramLink not available, using window.location.href');
+                window.location.href = targetLink;
+            }
+        } catch (error) {
+            // Обработка ошибок
+            console.error('Redirect failed:', error);
+            document.getElementById('loading').innerText = 'Ошибка перенаправления. Попробуйте снова.';
+            window.location.href = targetLink; // Дополнительный fallback
         }
 
-        // Опционально: Закрываем Mini App после редиректа (чтобы не висело)
+        // Закрываем Mini App через 2 секунды, чтобы редирект успел выполниться
         setTimeout(() => {
+            console.log('Closing Mini App');
             tg.close();
-        }, 1000);
+        }, 2000);
     </script>
 </body>
 </html>
