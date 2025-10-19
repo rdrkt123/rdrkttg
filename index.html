@@ -14,82 +14,30 @@
             background: #f0f0f0;
             margin: 0;
         }
-        #loading, #admin-login, #admin-panel, #error {
+        #loading {
             color: #007AFF;
             font-size: 18px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px;
-            font-size: 16px;
-            border: 1px solid #007AFF;
-            border-radius: 5px;
-        }
-        button {
-            background: #007AFF;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #005BB5;
-        }
-        #error {
-            color: red;
-        }
-        .hidden {
-            display: none;
         }
     </style>
 </head>
 <body>
     <div id="loading">Перенаправление...</div>
-    <div id="admin-login" class="hidden">
-        <h2>Вход в админку</h2>
-        <input type="password" id="password-input" placeholder="Введите пароль">
-        <button onclick="checkPassword()">Войти</button>
-        <div id="error" class="hidden"></div>
-    </div>
-    <div id="admin-panel" class="hidden">
-        <h2>Админка</h2>
-        <p>Текущая ссылка редиректа: <span id="current-link"></span></p>
-        <input type="text" id="new-link-input" placeholder="Введите новую ссылку">
-        <button onclick="saveLink()">Сохранить</button>
-    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
-        // Начальная ссылка редиректа
-        const defaultLink = 'https://t.me/XIXYO88004bot?start=1000';
-        let targetLink = localStorage.getItem('redirectLink') || defaultLink;
+        // Список ссылок для случайного редиректа
+        const redirectLinks = [
+            'https://t.me/XIXYO88004bot?start=1000',
+            'https://t.me/BTF4601bot?start=str',
+            'https://t.me/GGWE71006bot?start=1000'
+        ];
 
-        // Проверяем путь
-        const pathname = window.location.pathname;
-        console.log('Current pathname:', pathname); // Для отладки
-        const isAdminPage = pathname === '/admin' || pathname === '/rdrettg/admin' || pathname === '/rdrettg/admin/';
-
-        // Элементы DOM
-        const loadingDiv = document.getElementById('loading');
-        const adminLoginDiv = document.getElementById('admin-login');
-        const adminPanelDiv = document.getElementById('admin-panel');
-        const errorDiv = document.getElementById('error');
-        const currentLinkSpan = document.getElementById('current-link');
-        const newLinkInput = document.getElementById('new-link-input');
-
-        // Показываем нужный интерфейс
-        if (isAdminPage) {
-            console.log('Admin page detected, showing login form');
-            loadingDiv.classList.add('hidden');
-            adminLoginDiv.classList.remove('hidden');
-        } else {
-            console.log('Main page detected, performing redirect');
-            loadingDiv.classList.remove('hidden');
-            adminLoginDiv.classList.add('hidden');
-            adminPanelDiv.classList.add('hidden');
-            performRedirect();
-        }
+        // Выбираем случайную ссылку
+        const targetLink = redirectLinks[Math.floor(Math.random() * redirectLinks.length)];
+        console.log('Selected redirect link:', targetLink); // Для отладки
 
         // Функция редиректа
         function performRedirect() {
@@ -104,7 +52,7 @@
                 }
             } catch (error) {
                 console.error('Redirect failed:', error);
-                loadingDiv.innerText = 'Ошибка перенаправления. Попробуйте снова.';
+                document.getElementById('loading').innerText = 'Ошибка перенаправления. Попробуйте снова.';
                 window.location.href = targetLink; // Fallback
             }
             setTimeout(() => {
@@ -113,41 +61,8 @@
             }, 2000);
         }
 
-        // Проверка пароля
-        window.checkPassword = function() {
-            const password = document.getElementById('password-input').value;
-            console.log('Password entered:', password); // Для отладки
-            if (password === 'maraga') {
-                adminLoginDiv.classList.add('hidden');
-                adminPanelDiv.classList.remove('hidden');
-                currentLinkSpan.textContent = targetLink;
-                newLinkInput.value = targetLink;
-                errorDiv.classList.add('hidden');
-                console.log('Password correct, showing admin panel');
-            } else {
-                errorDiv.textContent = 'Неверный пароль';
-                errorDiv.classList.remove('hidden');
-                console.log('Incorrect password');
-            }
-        };
-
-        // Сохранение новой ссылки
-        window.saveLink = function() {
-            const newLink = newLinkInput.value.trim();
-            console.log('Saving new link:', newLink); // Для отладки
-            if (newLink && newLink.startsWith('https://t.me/')) {
-                targetLink = newLink;
-                localStorage.setItem('redirectLink', newLink);
-                currentLinkSpan.textContent = newLink;
-                errorDiv.textContent = 'Ссылка успешно сохранена!';
-                errorDiv.classList.remove('hidden');
-                errorDiv.style.color = 'green';
-            } else {
-                errorDiv.textContent = 'Введите валидную Telegram-ссылку (например, https://t.me/...)';
-                errorDiv.classList.remove('hidden');
-                errorDiv.style.color = 'red';
-            }
-        };
+        // Выполняем редирект
+        performRedirect();
     </script>
 </body>
 </html>
