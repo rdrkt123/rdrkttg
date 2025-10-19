@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirect Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+            margin: 0;
+        }
+        #loading, #admin-login, #admin-panel, #error {
+            color: #007AFF;
+            font-size: 18px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+            border: 1px solid #007AFF;
+            border-radius: 5px;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005BB5;
+        }
+        #error {
+            color: red;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Перенаправление...</div>
+    <div id="admin-login" class="hidden">
+        <h2>Вход в админку</h2>
+        <input type="password" id="password-input" placeholder="Введите пароль">
+        <button onclick="checkPassword()">Войти</button>
+        <div id="error" class="hidden"></div>
+    </div>
+    <div id="admin-panel" class="hidden">
+        <h2>Админка</h2>
+        <p>Текущая ссылка редиректа: <span id="current-link"></span></p>
+        <input type="text" id="new-link-input" placeholder="Введите новую ссылку">
+        <button onclick="saveLink()">Сохранить</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Начальная ссылка редиректа
+        const defaultLink = 'https://t.me/XIXYO88004bot?start=1000';
+        // Загружаем ссылку из localStorage или используем дефолтную
+        let targetLink = localStorage.getItem('redirectLink') || defaultLink;
+
+        // Проверяем, находится ли пользователь на /admin (учитываем baseurl GitHub Pages)
+        const pathname = window.location.pathname;
+        const basePath = '/rdrettg';  // Твой baseurl
+        const isAdminPage = pathname === '/admin' || pathname === `${basePath}/admin`;
+
+        // Элементы DOM
+        const loadingDiv = document.getElementById('loading');
+        const adminLoginDiv = document.getElementById('admin-login');
+        const adminPanelDiv = document.getElementById('admin-panel');
+        const errorDiv = document.getElementById('error');
+        const currentLinkSpan = document.getElementById('current-link');
+        const newLinkInput = document.getElementById('new-link-input');
+
+        // Показываем нужный интерфейс
+        if (isAdminPage) {
+            loadingDiv.classList.add('hidden');
+            adminLoginDiv.classList.remove('hidden');
+        } else {
+            loadingDiv.classList.remove('hidden');
+            adminLoginDiv.classList.add('hidden');
+            adminPanelDiv.classList.add('hidden');
+            performRedirect();
+        }
+
+        // Функция редиректа
+        function performRedirect() {
+            console.log('Attempting redirect to:', targetLink);
+            try {
+                if (typeof tg.openTelegramLink === 'function') {
+                    console.log('openTelegramLink is available, redirecting...');
+                    tg.openTelegramLink(targetLink);
+                } else {
+                    console.log('openTelegramLink not available, using window.location.href');
+                    window.location.href = targetLink;
+                }
+            } catch (error) {
+                console.error('Redirect failed:', error);
+                loadingDiv.innerText = 'Ошибка перенаправления. Попробуйте снова.';
+                window.location.href = targetLink; // Fallback
+            }
+            setTimeout(() => {
+                console.log('Closing Mini App');
+                tg.close();
+            }, 2000);
+        }
+
+        // Проверка пароля
+        window.checkPassword = function() {
+            const password = document.getElementById('password-input').value;
+            if (password === 'maraga') {
+                adminLoginDiv.classList.add('hidden');
+                adminPanelDiv.classList.remove('hidden');
+                currentLinkSpan.textContent = targetLink;
+                newLinkInput.value = targetLink;
+                errorDiv.classList.add('hidden');
+            } else {
+                errorDiv.textContent = 'Неверный пароль';
+                errorDiv.classList.remove('hidden');
+            }
+        };
+
+        // Сохранение новой ссылки
+        window.saveLink = function() {
+            const newLink = newLinkInput.value.trim();
+            if (newLink && newLink.startsWith('https://t.me/')) {
+                targetLink = newLink;
+                localStorage.setItem('redirectLink', newLink);
+                currentLinkSpan.textContent = newLink;
+                errorDiv.textContent = 'Ссылка успешно сохранена!';
+                errorDiv.classList.remove('hidden');
+                errorDiv.style.color = 'green';
+            } else {
+                errorDiv.textContent = 'Введите валидную Telegram-ссылку (например, https://t.me/...)';
+                errorDiv.classList.remove('hidden');
+                errorDiv.style.color = 'red';
+            }
+        };
+    </script>
+</body>
+</html>
