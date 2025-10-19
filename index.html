@@ -65,8 +65,10 @@
         // Загружаем ссылку из localStorage или используем дефолтную
         let targetLink = localStorage.getItem('redirectLink') || defaultLink;
 
-        // Проверяем, находится ли пользователь на /admin
-        const isAdminPage = window.location.pathname === '/admin';
+        // Проверяем, находится ли пользователь на /admin (учитываем baseurl GitHub Pages)
+        const pathname = window.location.pathname;
+        const basePath = '/rdrettg';  // Твой baseurl
+        const isAdminPage = pathname === '/admin' || pathname === `${basePath}/admin`;
 
         // Элементы DOM
         const loadingDiv = document.getElementById('loading');
