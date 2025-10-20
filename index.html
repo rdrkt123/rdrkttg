@@ -26,10 +26,25 @@
             color: #FF3B30;
             font-size: 16px;
         }
+        .button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+        }
+        .button:hover {
+            background-color: #0056CC;
+        }
     </style>
 </head>
 <body>
     <div id="loading">Перенаправление...</div>
+    <button id="manualRedirect" class="button">Перейти вручную</button>
 
     <script>
         const tg = window.Telegram?.WebApp;
@@ -42,6 +57,17 @@
         // Выбираем случайную ссылку
         const targetLink = redirectLinks[Math.floor(Math.random() * redirectLinks.length)];
         console.log('Selected redirect link:', targetLink);
+
+        // Функция для ручного редиректа
+        function manualRedirect() {
+            console.log('Manual redirect clicked');
+            window.open(targetLink, '_blank');
+            if (tg && typeof tg.close === 'function') {
+                setTimeout(() => {
+                    tg.close();
+                }, 500);
+            }
+        }
 
         // Проверяем готовность Telegram WebApp
         function waitForTelegramReady(callback, timeout = 5000) {
@@ -73,6 +99,7 @@
         // Основная функция редиректа
         function performRedirect() {
             console.log('Attempting redirect to:', targetLink);
+            console.log('Platform:', tg ? tg.platform : 'Unknown');
             try {
                 if (tg && typeof tg.openTelegramLink === 'function') {
                     console.log('Using tg.openTelegramLink');
@@ -80,34 +107,75 @@
                     // Даем время на выполнение редиректа
                     setTimeout(() => {
                         console.log('Closing Mini App after tg.openTelegramLink');
-                        tg.close();
-                    }, 1000);
+                        if (tg && typeof tg.close === 'function') {
+                            tg.close();
+                        }
+                    }, 1500);
                 } else {
                     console.log('tg.openTelegramLink not available, using window.location.href');
                     window.location.href = targetLink;
                 }
             } catch (error) {
                 console.error('Redirect failed:', error);
-                document.getElementById('loading').innerText = 'Ошибка перенаправления. Пожалуйста, перейдите вручную.';
-                document.getElementById('loading').classList.add('error');
-                fallbackRedirect();
+                showFallback();
             }
+        }
+
+        // Показать кнопку ручного перенаправления
+        function showFallback() {
+            const loadingEl = document.getElementById('loading');
+            const buttonEl = document.getElementById('manualRedirect');
+            loadingEl.innerText = 'Автоматическое перенаправление недоступно. Нажмите кнопку ниже.';
+            loadingEl.classList.add('error');
+            buttonEl.style.display = 'block';
+            buttonEl.onclick = manualRedirect;
         }
 
         // Резервный редирект
         function fallbackRedirect() {
             console.log('Executing fallback redirect to:', targetLink);
-            window.location.href = targetLink;
-            // Дополнительная попытка закрытия через 2 секунды
-            setTimeout(() => {
-                if (tg && typeof tg.close === 'function') {
-                    console.log('Closing Mini App in fallback');
-                    tg.close();
+            // Проверяем платформу для выбора метода
+            if (tg && tg.platform === 'android') {
+                // Для Android пробуем window.open сначала
+                const newWindow = window.open(targetLink, '_blank');
+                if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                    console.log('window.open blocked, showing manual button');
+                    showFallback();
+                } else {
+                    // Если window.open сработал, закрываем Mini App
+                    setTimeout(() => {
+                        if (tg && typeof tg.close === 'function') {
+                            console.log('Closing Mini App in fallback');
+                            tg.close();
+                        }
+                    }, 1000);
                 }
-            }, 2000);
+            } else {
+                // Для других платформ используем location.href
+                window.location.href = targetLink;
+                setTimeout(() => {
+                    if (tg && typeof tg.close === 'function') {
+                        console.log('Closing Mini App in fallback');
+                        tg.close();
+                    }
+                }, 2000);
+            }
         }
 
-        // Запускаем редирект с ожиданием готовности Telegram WebApp
+        // Проверяем User Agent для дополнительной диагностики
+        function detectPlatform() {
+            const ua = navigator.userAgent.toLowerCase();
+            console.log('User Agent:', ua);
+            if (ua.includes('android')) {
+                console.log('Detected Android platform');
+            }
+            if (tg && tg.platform) {
+                console.log('Telegram detected platform:', tg.platform);
+            }
+        }
+
+        // Инициализация
+        detectPlatform();
         waitForTelegramReady(performRedirect);
     </script>
 </body>
