@@ -13,10 +13,18 @@
             padding: 20px;
             background: #f0f0f0;
             margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
         #loading {
             color: #007AFF;
             font-size: 18px;
+        }
+        .error {
+            color: #FF3B30;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -24,11 +32,7 @@
     <div id="loading">Перенаправление...</div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
-        // Список ссылок для случайного редиректа
+        const tg = window.Telegram?.WebApp;
         const redirectLinks = [
             'https://t.me/XIXYO88004bot?start=1000',
             'https://t.me/BTF4601bot?start=str',
@@ -37,32 +41,74 @@
 
         // Выбираем случайную ссылку
         const targetLink = redirectLinks[Math.floor(Math.random() * redirectLinks.length)];
-        console.log('Selected redirect link:', targetLink); // Для отладки
+        console.log('Selected redirect link:', targetLink);
 
-        // Функция редиректа
+        // Проверяем готовность Telegram WebApp
+        function waitForTelegramReady(callback, timeout = 5000) {
+            if (tg && typeof tg.ready === 'function') {
+                tg.ready();
+                tg.expand();
+                console.log('Telegram WebApp is ready');
+                callback();
+            } else {
+                console.warn('Telegram WebApp not ready, retrying...');
+                let elapsed = 0;
+                const interval = setInterval(() => {
+                    if (tg && typeof tg.ready === 'function') {
+                        tg.ready();
+                        tg.expand();
+                        console.log('Telegram WebApp is ready after retry');
+                        clearInterval(interval);
+                        callback();
+                    } else if (elapsed >= timeout) {
+                        console.error('Telegram WebApp failed to initialize within timeout');
+                        clearInterval(interval);
+                        fallbackRedirect();
+                    }
+                    elapsed += 100;
+                }, 100);
+            }
+        }
+
+        // Основная функция редиректа
         function performRedirect() {
             console.log('Attempting redirect to:', targetLink);
             try {
-                if (typeof tg.openTelegramLink === 'function') {
-                    console.log('openTelegramLink is available, redirecting...');
+                if (tg && typeof tg.openTelegramLink === 'function') {
+                    console.log('Using tg.openTelegramLink');
                     tg.openTelegramLink(targetLink);
+                    // Даем время на выполнение редиректа
+                    setTimeout(() => {
+                        console.log('Closing Mini App after tg.openTelegramLink');
+                        tg.close();
+                    }, 1000);
                 } else {
-                    console.log('openTelegramLink not available, using window.location.href');
+                    console.log('tg.openTelegramLink not available, using window.location.href');
                     window.location.href = targetLink;
                 }
             } catch (error) {
                 console.error('Redirect failed:', error);
-                document.getElementById('loading').innerText = 'Ошибка перенаправления. Попробуйте снова.';
-                window.location.href = targetLink; // Fallback
+                document.getElementById('loading').innerText = 'Ошибка перенаправления. Пожалуйста, перейдите вручную.';
+                document.getElementById('loading').classList.add('error');
+                fallbackRedirect();
             }
+        }
+
+        // Резервный редирект
+        function fallbackRedirect() {
+            console.log('Executing fallback redirect to:', targetLink);
+            window.location.href = targetLink;
+            // Дополнительная попытка закрытия через 2 секунды
             setTimeout(() => {
-                console.log('Closing Mini App');
-                tg.close();
+                if (tg && typeof tg.close === 'function') {
+                    console.log('Closing Mini App in fallback');
+                    tg.close();
+                }
             }, 2000);
         }
 
-        // Выполняем редирект
-        performRedirect();
+        // Запускаем редирект с ожиданием готовности Telegram WebApp
+        waitForTelegramReady(performRedirect);
     </script>
 </body>
 </html>
